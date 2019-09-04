@@ -728,3 +728,55 @@ int parseRawFormatYDWG02(char *msg, RawMessage *m, bool showJson)
 
   return setParsedValues(m, prio, pgn, dst, src, i);
 }
+
+int parseRawFormatCANDUMP(char *msg, RawMessage *m, bool showJson)
+{
+  char *       token;
+  char *       nexttoken;
+  time_t       tiden;
+  struct tm    tm;
+  char         D;
+  unsigned int msgid;
+  unsigned int prio, pgn, src, dst;
+  int          i;
+
+  token = strtok_r(msg, " ", &nexttoken);
+  if (!token)
+  {
+    return -1;
+  }
+  tiden = time(NULL);
+  localtime_r(&tiden, &tm);
+  strftime(m->timestamp, sizeof(m->timestamp), "%Y-%m-%dT%H:%M:%S", &tm);
+
+  // parse msgid
+  token = strtok_r(NULL, " ", &nexttoken);
+  if (!token)
+  {
+    return -1;
+  }
+  msgid = strtoul(token, NULL, 16);
+  getISO11783BitsFromCanId(msgid, &prio, &pgn, &src, &dst);
+
+  // parse direction, not really used in analyzer
+  token = strtok_r(NULL, " ", &nexttoken);
+  if (!token)
+  {
+    return -1;
+  }
+  D = token[0];
+
+  // parse data
+  i = 0;
+  while ((token = strtok_r(NULL, " ", &nexttoken)) != 0)
+  {
+    m->data[i] = strtoul(token, NULL, 16);
+    i++;
+    if (i > FASTPACKET_MAX_SIZE)
+    {
+      return -1;
+    }
+  }  
+
+ return setParsedValues(m, prio, pgn, dst, src, i);
+}
