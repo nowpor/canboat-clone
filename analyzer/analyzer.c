@@ -34,7 +34,8 @@ enum RawFormats
   RAWFORMAT_CHETCO,
   RAWFORMAT_GARMIN_CSV1,
   RAWFORMAT_GARMIN_CSV2,
-  RAWFORMAT_YDWG02
+  RAWFORMAT_YDWG02,
+  RAWFORMAT_CANDUMP
 };
 
 enum RawFormats format = RAWFORMAT_UNKNOWN;
@@ -310,6 +311,10 @@ int main(int argc, char **argv)
         r = parseRawFormatYDWG02(msg, &m, showJson);
         break;
 
+      case RAWFORMAT_CANDUMP:
+	r = parseRawFormatCANDUMP(msg, &m, showJson);
+	break;
+
       default:
         logError("Unknown message format\n");
         exit(1);
@@ -391,6 +396,15 @@ enum RawFormats detectFormat(const char *msg)
     }
   }
 
+  {
+    int  b, d;
+    char *a, *c;
+    if (sscanf(msg, "%s  %08X   %s  %08X ", &a, &b, &c, &d) == 4)
+    {
+      logInfo("Detected CANDUMP protocol with all data on one line\n");
+      return RAWFORMAT_CANDUMP;
+    }
+  }
   return RAWFORMAT_UNKNOWN;
 }
 
